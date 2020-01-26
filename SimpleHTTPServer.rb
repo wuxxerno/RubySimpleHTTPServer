@@ -8,8 +8,8 @@ class HTTPResponse
     "Content-Length: #{data.size}\r\n" +
     "\r\n" +
     "#{data}\r\n"
-    def get
-      return @response
+    def response
+      @response
     end
   end
 
@@ -17,13 +17,13 @@ class HTTPResponse
 class HTTPRequestParser
   def initialize request
     @method, @path, @version = request.lines[0].split
-    def get
+    def path
       if @path != '/'
         @path[0] = ''
       else
-        return @path
+        @path
       end
-      return @path
+        @path
     end
   end
 end
@@ -37,16 +37,18 @@ class SimpleHTTPServer
     loop do
       @client = @server.accept
       @request = @client.readpartial 2048
-      path = HTTPRequestParser.new(@request).get()
+      path = HTTPRequestParser.new(@request).path
       if File.exists?(path)
         begin
           @file = IO.binread(path)
         rescue
+          @client.write HTTPResponse.new(code:404).response
+          @client.close
           next
         end
-        @client.write HTTPResponse.new(code:200, data:@file).get()
+        @client.write HTTPResponse.new(code:200, data:@file).response
       else
-        @client.write HTTPResponse.new(code:404).get()
+        @client.write HTTPResponse.new(code:404).response
       end
       @client.close
     end
